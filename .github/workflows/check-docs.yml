@@ -1,7 +1,7 @@
 name: Docs Update Guard
 
 on:
-  push:
+  workflow_call:
 
 jobs:
   check-docs-updated:
