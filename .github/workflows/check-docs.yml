@@ -18,14 +18,14 @@ jobs:
           AFTER="${GITHUB_SHA}"
           BEFORE="$(jq -r '.before' < "$GITHUB_EVENT_PATH")"
 
-          # Cas des premiers commits (CREATE branch) : before = 0000...
+          # Case of first commits (branch CREATE): before = 0000...
           if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            # Si c'est le tout premier commit, on skippe (pas de base pour comparer)
+            # If this is the very first commit, skip (no base to compare against)
             if [ "$(git rev-list --count "$AFTER")" -eq 1 ]; then
               echo "skip=true" >> $GITHUB_OUTPUT
               exit 0
             else
-              # Prendre le parent direct du commit courant
+              # Take the direct parent of the current commit
               BEFORE="$(git rev-parse "${AFTER}^")"
             fi
           fi
@@ -48,12 +48,12 @@ jobs:
           echo "Changed files:"
           cat changed_files.txt
 
-          # Flags de changement côté source
+          # Source change flags
           if grep -qE '^apps/' changed_files.txt; then echo "apps_changed=1" >> $GITHUB_OUTPUT; else echo "apps_changed=0" >> $GITHUB_OUTPUT; fi
           if grep -qE '^infra/' changed_files.txt; then echo "infra_changed=1" >> $GITHUB_OUTPUT; else echo "infra_changed=0" >> $GITHUB_OUTPUT; fi
           if grep -qx 'version.txt' changed_files.txt; then echo "version_changed=1" >> $GITHUB_OUTPUT; else echo "version_changed=0" >> $GITHUB_OUTPUT; fi
 
-          # Flags de modification des docs
+          # Documentation change flags
           if grep -qx 'docs/apps.md' changed_files.txt;  then echo "docs_apps_changed=1"  >> $GITHUB_OUTPUT; else echo "docs_apps_changed=0"  >> $GITHUB_OUTPUT; fi
           if grep -qx 'docs/infra.md' changed_files.txt; then echo "docs_infra_changed=1" >> $GITHUB_OUTPUT; else echo "docs_infra_changed=0" >> $GITHUB_OUTPUT; fi
           if grep -qx 'docs/version.md' changed_files.txt; then echo "docs_version_changed=1" >> $GITHUB_OUTPUT; else echo "docs_version_changed=0" >> $GITHUB_OUTPUT; fi
@@ -72,27 +72,27 @@ jobs:
           docs_infra_changed="${{ steps.changes.outputs.docs_infra_changed }}"
           docs_version_changed="${{ steps.changes.outputs.docs_version_changed }}"
 
-          # Règles d’exigence
+          # Enforcement rules
           if [ "$apps_changed" = "1" ] && [ "$docs_apps_changed" = "0" ]; then
-            msgs+=("Documentation non mise à jour: 'docs/apps.md' n'a pas été modifié alors que 'apps/**' a changé.")
+            msgs+=("Documentation not updated: 'docs/apps.md' was not modified while 'apps/**' changed.")
             missing=1
           fi
 
           if [ "$infra_changed" = "1" ] && [ "$docs_infra_changed" = "0" ]; then
-            msgs+=("Documentation non mise à jour: 'docs/infra.md' n'a pas été modifié alors que 'infra/**' a changé.")
+            msgs+=("Documentation not updated: 'docs/infra.md' was not modified while 'infra/**' changed.")
             missing=1
           fi
 
           if [ "$version_changed" = "1" ] && [ "$docs_version_changed" = "0" ]; then
-            msgs+=("Documentation non mise à jour: 'docs/version.md' n'a pas été modifié alors que 'version.txt' a changé.")
+            msgs+=("Documentation not updated: 'docs/version.md' was not modified while 'version.txt' changed.")
             missing=1
           fi
 
           if [ $missing -eq 1 ]; then
-            echo "❌ Échec : la documentation liée aux changements n'a pas été mise à jour."
+            echo "❌ Failure: the documentation related to the changes has not been updated."
             printf '%s\n' "${msgs[@]}"
             exit 1
           else
-            echo "✅ OK : documentation mise à jour (ou aucun changement nécessitant une MAJ)."
+            echo "✅ OK: documentation updated (or no changes requiring an update)."
           fi
 
