@@ -14,9 +14,9 @@ jobs:
         shell: bash
         run: |
           # Fichiers obligatoires
-          required_files=("README.md" "version.txt")
+          required_files=("README.md" "version.txt" "mkdocs.yml")
           # Dossiers obligatoires
-          required_dirs=("infra" "apps" ".env")
+          required_dirs=("infra" "apps" ".env" "docs")
 
           missing=0
 
